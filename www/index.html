@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="lib/themes/contactelDesign.min.css" /> 
+    <link rel="stylesheet" href="lib/themes/jquery.mobile.icons.min.css" />
+    <link rel="stylesheet" href="lib/jquery.mobile.structure-1.4.5.min.css">
+    <link rel="stylesheet" href="css/index.css">
+    <script src="lib/jquery.min.js"></script>
+    <script src="lib/jquery.mobile-1.4.5.min.js"></script>
+    <script src="cordova.js"></script>
+    <script src="js/index.js"></script>
+    <title>Contactel</title>
+</head>
+<body>
+    <!-- page d'accueil -->
+    <div id="homepage" data-role="page" data-theme="a">
+        <div data-role="header">
+            <h1>ContacTel</h1>
+        </div>
+        <div role="main" class="ui-content">
+            <a href="#addContactPopup" data-rel="popup" data-role="button" data-icon="plus" data-iconpos="right">Ajouter Contact</a>
+            <ul id="contactList" data-role="listview" data-inset="true" data-filter="true" data-filter-placeholder="Rechercher un contact">
+
+            </ul>
+        </div>
+        <div data-role="footer" data-position="fixed">
+          <h1>M1IABD &copy; 2025</h1>
+        </div>
+        <!-- formulaire d'ajout  -->
+        <div data-role="popup" id="addContactPopup" data-theme="a" data-overlay-theme="b" class="ui-corner-all">
+        <div style="padding: 15px; width: 300px;">
+            <h3>Ajouter un contact</h3>
+            <form id="contactForm">
+            <input type="text" id="prenom" placeholder="Prénom" required>
+            <input type="text" id="nom" placeholder="Nom" required>
+            <input type="tel" id="telephone" placeholder="Téléphone" required>
+            <input type="email" id="email" placeholder="Email">
+            <input type="text" id="organisation" placeholder="Organisation">
+            <input type="text" id="job" placeholder="Profession">
+            <button type="submit" data-theme="b">Enregistrer</button>
+            </form>
+        </div>
+        </div>
+
+    </div>
+
+    <!-- Page de détails contacts  -->
+     <div data-role="page" id="contactDetails" data-theme="a">
+        <div data-role="header" data-position="fixed">
+            <h1>ContacTel</h1>
+            <a href="#homepage" data-rel="back" data-role="button" data-icon="home" data-iconpos="notext">Retour</a>
+        </div>
+
+        <div role="main" class="ui-content">
+            <div data-role="header">
+                <a href="#"  data-role="button" data-icon="edit" data-iconpos="notext">Modifier</a>
+                <h1>Contact Details</h1>
+                <a href="#" data-role="button" data-icon="delete" data-iconpos="notext">Supprimer</a>
+           </div>
+            <h2 id="detailsNom"></h2>
+            <img id="detailsAvatar" src="img/avatar.png" alt="Avatar" class="avatar-large">
+            <p><strong>Téléphone :</strong> <span id="detailsTelephone"></span></p>
+            <p><strong>Email :</strong> <span id="detailsEmail"></span></p>
+            <p><strong>Organisation :</strong> <span id="detailsOrganisation"></span></p>
+            <p><strong>Profession :</strong> <span id="detailsJob"></span></p>
+        </div>
+
+        <div data-role="footer" data-position="fixed">
+          <h1>M1IABD &copy; 2025</h1>
+        </div>
+        <!-- formulaire de modification  -->
+        <div data-role="popup" id="editContactPopup" data-theme="a" data-overlay-theme="b" class="ui-corner-all">
+        <div style="padding: 15px; width: 300px;">
+            <h3>Modifier Contact</h3>
+            <form id="editContactForm">
+            <input type="text" id="editPrenom" placeholder="Prénom" required>
+            <input type="text" id="editNom" placeholder="Nom" required>
+            <input type="tel" id="editTelephone" placeholder="Téléphone" required>
+            <input type="email" id="editEmail" placeholder="Email">
+            <input type="text" id="editOrganisation" placeholder="Organisation">
+            <input type="text" id="editJob" placeholder="Profession">
+            <button type="submit" data-theme="b">Enregistrer</button>
+            </form>
+        </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
