@@ -1,145 +1,166 @@
-
-document.addEventListener('DOMContentLoaded', function () {
-    const contactForm = document.getElementById("contactForm");
+document.addEventListener('deviceready', function () {
     const contactList = document.getElementById("contactList");
-//###### Charger la liste des contacts quand homepage s'affiche 
-    const contacts = JSON.parse(localStorage.getItem("contacts")) || [];
-    afficherContacts(contacts);
+    let contactsGlobaux = []; // Pour les contacts du téléphone
+    let contactsLocaux = JSON.parse(localStorage.getItem('contactsLocaux')) || []; // Pour les contacts ajoutés via l'app
+    let indexContactActuel = null;
+    let isLocalContact = false;
 
-//#####Ajouter contacts 
-    contactForm.addEventListener("submit", function (e) {
-      e.preventDefault();
+    // Charger les contacts du téléphone
+    function loadContacts() {
+        let options = new ContactFindOptions();
+        options.filter = "";
+        options.multiple = true;
+        let fields = ["displayName", "phoneNumbers", "emails", "addresses", "organizations"];
 
-       // 🔁 Recharge toujours la dernière version depuis localStorage
-    let contacts = JSON.parse(localStorage.getItem("contacts")) || [];
-
-      const prenom = document.getElementById("prenom").value.trim();
-      const nom = document.getElementById("nom").value.trim();
-      const telephone = document.getElementById("telephone").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const organisation = document.getElementById("organisation").value.trim();
-      const job = document.getElementById("job").value.trim();
-
-      if (prenom && nom && telephone) {
-        const nouveauContact = { prenom, nom, telephone, email, organisation, job };
-        contacts.push(nouveauContact);
-
-        localStorage.setItem("contacts", JSON.stringify(contacts));
-
-        afficherContacts(contacts);
-        contactForm.reset();
-        $("#addContactPopup").popup("close");
-      } else {
-        alert("Veuillez remplir au moins prénom, nom et téléphone.");
-      }
-    });
-
-//###### Afficher la liste des contacts sur homepage
-    function afficherContacts(liste) {
-    contactList.innerHTML = "";
-    liste.forEach((contact, index) => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-        <a href="#contactDetails" class="contact-item" data-index="${index}">
-            <img src="img/avatar.png" class="avatar" />
-            <h2>${contact.prenom} ${contact.nom}</h2>
-            <p>${contact.telephone}</p>
-        </a>
-        `;
-        contactList.appendChild(li);
-    });
-
-    $("#contactList").listview("refresh");
+        navigator.contacts.find(fields, function(liste) {
+            contactsGlobaux = liste;
+            showContacts([...contactsLocaux, ...contactsGlobaux]);
+        }, erreurContacts, options);
     }
 
-   //######## Quand on clique sur un contact : afficher ses informations
-    let indexContactActuel = null; // 🆕 globale
-    $(document).on("click", ".contact-item", function () {
-    indexContactActuel = $(this).data("index"); // 🆕 stocker l’index
-    const contacts = JSON.parse(localStorage.getItem("contacts")) || [];
-    const contact = contacts[indexContactActuel];
+    // Afficher la liste combinée des contacts
+    function showContacts(liste) {
+        contactList.innerHTML = "";
 
-    if (contact) {
-        document.getElementById("detailsNom").textContent = `${contact.prenom} ${contact.nom}`;
-        document.getElementById("detailsTelephone").textContent = contact.telephone;
-        document.getElementById("detailsEmail").textContent = contact.email || "Non renseigné";
-        document.getElementById("detailsOrganisation").textContent = contact.organisation || "Non renseignée";
-        document.getElementById("detailsJob").textContent = contact.job || "Non renseignée";
-    }
-    });
+        liste.forEach((contact, index) => {
+            if (!contact.displayName || !contact.phoneNumbers || contact.phoneNumbers.length === 0) return;
 
-
-//####Modidier un contact data-icon edit
-   //Affichage sur un popup
-    $(document).on("click", "#contactDetails a[data-icon='edit']", function () {
-        const contacts = JSON.parse(localStorage.getItem("contacts")) || [];
-        const contact = contacts[indexContactActuel];
-
-        if (!contact) return;
-
-        // Pré-remplir la popup de modification
-        $("#editPrenom").val(contact.prenom);
-        $("#editNom").val(contact.nom);
-        $("#editTelephone").val(contact.telephone);
-        $("#editEmail").val(contact.email);
-        $("#editOrganisation").val(contact.organisation);
-        $("#editJob").val(contact.job);
-
-        // Ouvrir la popup
-        $("#editContactPopup").popup("open");
+            const li = document.createElement("li");
+            li.innerHTML = `
+                <a href="#contactDetails" class="contact-item" data-index="${index}">
+                    <img src="img/avatar.png" class="avatar" />
+                    <h2>${contact.displayName}</h2>
+                    <p>${contact.phoneNumbers[0].value}</p>
+                </a>
+            `;
+            contactList.appendChild(li);
         });
-    //Soummission du formulaire 
-     document.getElementById("editContactForm").addEventListener("submit", function (e) {
+
+        $("#contactList").listview("refresh");
+    }
+
+    function erreurContacts(e) {
+        alert("Erreur lors de la récupération des contacts : " + e.code);
+        showContacts(contactsLocaux); // Afficher au moins les contacts locaux
+    }
+
+    // Gestion de l'ajout de contact
+    document.getElementById("contactForm").addEventListener("submit", function(e) {
         e.preventDefault();
-
-        const contacts = JSON.parse(localStorage.getItem("contacts")) || [];
-
-        const updatedContact = {
-            prenom: document.getElementById("editPrenom").value.trim(),
-            nom: document.getElementById("editNom").value.trim(),
-            telephone: document.getElementById("editTelephone").value.trim(),
-            email: document.getElementById("editEmail").value.trim(),
-            organisation: document.getElementById("editOrganisation").value.trim(),
-            job: document.getElementById("editJob").value.trim()
+        
+        const newContact = {
+            id: Date.now().toString(),
+            displayName: document.getElementById("prenom").value + " " + document.getElementById("nom").value,
+            phoneNumbers: [{ value: document.getElementById("telephone").value }],
+            emails: [{ value: document.getElementById("email").value || "" }],
+            organizations: [{ 
+                name: document.getElementById("organisation").value || "",
+                title: document.getElementById("job").value || ""
+            }],
+            addresses: [{ formatted: "" }],
+            isLocal: true // Marquer comme contact local
         };
 
-        if (indexContactActuel !== null) {
-            contacts[indexContactActuel] = updatedContact;
-            localStorage.setItem("contacts", JSON.stringify(contacts));
-            afficherContacts(contacts);
-            $("#editContactPopup").popup("close");
+        contactsLocaux.push(newContact);
+        localStorage.setItem('contactsLocaux', JSON.stringify(contactsLocaux));
+        
+        $("#addContactPopup").popup("close");
+        showContacts([...contactsLocaux, ...contactsGlobaux]);
+        this.reset();
+    });
 
-            // Mettre à jour aussi la page de détails
-            document.getElementById("detailsNom").textContent = `${updatedContact.prenom} ${updatedContact.nom}`;
-            document.getElementById("detailsTelephone").textContent = updatedContact.telephone;
-            document.getElementById("detailsEmail").textContent = updatedContact.email || "Non renseigné";
-            document.getElementById("detailsOrganisation").textContent = updatedContact.organisation || "Non renseignée";
-            document.getElementById("detailsJob").textContent = updatedContact.job || "Non renseignée";
-        }
-        });
+    // Affichage des détails du contact
+    $(document).on("click", ".contact-item", function() {
+        indexContactActuel = $(this).data("index");
+        const tousContacts = [...contactsLocaux, ...contactsGlobaux];
+        const contact = tousContacts[indexContactActuel];
 
+        isLocalContact = contact.isLocal || false;
 
+        if (contact) {
+            document.getElementById("detailsNom").textContent = contact.displayName;
+            document.getElementById("detailsTelephone").textContent = contact.phoneNumbers?.[0]?.value || "Non renseigné";
+            document.getElementById("detailsEmail").textContent = contact.emails?.[0]?.value || "Non renseigné";
+            document.getElementById("detailsOrganisation").textContent = contact.organizations?.[0]?.name || "Non renseignée";
 
-//######Supprimer un contact data-icon delete 
-        $(document).on("click", "#contactDetails a[data-icon='delete']", function () {
-            if (confirm("Voulez-vous vraiment supprimer ce contact ?")) {
-                const contacts = JSON.parse(localStorage.getItem("contacts")) || [];
-
-                if (indexContactActuel !== null) {
-                contacts.splice(indexContactActuel, 1); // Supprime le contact
-                localStorage.setItem("contacts", JSON.stringify(contacts));
-                indexContactActuel = null;
-
-                // Recharger la liste principale
-                afficherContacts(contacts);
-
-                // Retour à la page d’accueil
-                $.mobile.changePage("#homepage");
-                }
+            // Pré-remplir le formulaire de modification si contact local
+            if (isLocalContact) {
+                const names = contact.displayName.split(' ');
+                document.getElementById("editPrenom").value = names[0] || '';
+                document.getElementById("editNom").value = names.slice(1).join(' ') || '';
+                document.getElementById("editTelephone").value = contact.phoneNumbers?.[0]?.value || '';
+                document.getElementById("editEmail").value = contact.emails?.[0]?.value || '';
+                document.getElementById("editOrganisation").value = contact.organizations?.[0]?.name || '';
+                document.getElementById("editJob").value = contact.organizations?.[0]?.title || '';
             }
-            });
+        }
+    });
 
+    // Modification de contact
+    $(document).on("click", "#contactDetails a[data-icon='edit']", function() {
+        if (!isLocalContact) {
+            alert("La modification n'est possible que pour les contacts ajoutés via l'application.");
+            return;
+        }
+        $("#editContactPopup").popup("open");
+    });
 
+    document.getElementById("editContactForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        
+        if (indexContactActuel !== null && isLocalContact) {
+            const updatedContact = {
+                id: contactsLocaux[indexContactActuel].id,
+                displayName: document.getElementById("editPrenom").value + " " + document.getElementById("editNom").value,
+                phoneNumbers: [{ value: document.getElementById("editTelephone").value }],
+                emails: [{ value: document.getElementById("editEmail").value || "" }],
+                organizations: [{ 
+                    name: document.getElementById("editOrganisation").value || "",
+                    title: document.getElementById("editJob").value || ""
+                }],
+                addresses: [{ formatted: "" }],
+                isLocal: true
+            };
 
-  });
+            contactsLocaux[indexContactActuel] = updatedContact;
+            localStorage.setItem('contactsLocaux', JSON.stringify(contactsLocaux));
+            
+            $("#editContactPopup").popup("close");
+            showContacts([...contactsLocaux, ...contactsGlobaux]);
+            $.mobile.changePage("#contactDetails");
+        }
+    });
 
+    // Suppression de contact
+    $(document).on("click", "#contactDetails a[data-icon='delete']", function() {
+        if (!isLocalContact) {
+            alert("La suppression n'est possible que pour les contacts ajoutés via l'application.");
+            return;
+        }
+        
+        if (confirm("Voulez-vous vraiment supprimer ce contact ?")) {
+            contactsLocaux.splice(indexContactActuel, 1);
+            localStorage.setItem('contactsLocaux', JSON.stringify(contactsLocaux));
+            showContacts([...contactsLocaux, ...contactsGlobaux]);
+            $.mobile.changePage("#homepage");
+        }
+    });
+
+    // Demande de permission et chargement initial
+    const permissions = cordova.plugins.permissions;
+    permissions.requestPermission(
+        permissions.READ_CONTACTS,
+        function (status) {
+            if (status.hasPermission) {
+                loadContacts();
+            } else {
+                alert("Permission refusée pour accéder aux contacts.");
+                showContacts(contactsLocaux);
+            }
+        },
+        function () {
+            alert("Erreur lors de la demande de permission.");
+            showContacts(contactsLocaux);
+        }
+    );
+});

@@ -8,4 +8,11 @@
     <content src="index.html" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
+    <!-- <platform name="android">
+    <edit-config file="AndroidManifest.xml" mode="merge" target="manifest/uses-permission[@android:name='android.permission.READ_CONTACTS']" xmlns:android="http://schemas.android.com/apk/res/android">
+        <uses-permission android:name="android.permission.READ_CONTACTS" />
+    </edit-config>
+    </platform> -->
+
+
 </widget>
